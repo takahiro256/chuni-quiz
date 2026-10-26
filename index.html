@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>この譜面なんでしょう</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* layout: player stage (16:9) on the left, quiz/answer panel on the right; stacks on narrow screens */
+:root{
+  --bg:#0d1020; --panel:#161a30; --line:#2a3052; --fg:#e8ebff; --dim:#8d93b8;
+  --accent:#3fd7ff; --accent2:#ff5fa8; --good:#5dff9a; --warn:#ffd25f; --bad:#ff6b6b;
+  --mask:#05060d;
+  --f-display:"Dela Gothic One","Zen Kaku Gothic New",sans-serif;
+  --f-body:"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP",sans-serif;
+  --f-num:"JetBrains Mono",ui-monospace,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px}
+button,input,select,textarea{font:inherit;color:inherit}
+header{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:14px max(16px,env(safe-area-inset-right,0px)) 14px max(16px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line)}
+h1{font-family:var(--f-display);font-weight:400;font-size:22px;margin:0;letter-spacing:.02em}
+h1 span{color:var(--accent)}
+nav{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+nav button{background:none;border:1px solid var(--line);border-radius:6px;padding:6px 12px;cursor:pointer;color:var(--dim)}
+nav button[aria-pressed="true"]{border-color:var(--accent);color:var(--fg);background:color-mix(in srgb,var(--accent) 14%,transparent)}
+main{padding:16px max(16px,env(safe-area-inset-right,0px)) 32px max(16px,env(safe-area-inset-left,0px))}
+.view{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}
+@media (max-width:900px){.view{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.panel h2{font-size:13px;letter-spacing:.12em;color:var(--dim);margin:0;font-weight:700}
+label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--dim)}
+input,select,textarea{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;min-width:0}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+textarea{resize:vertical;font-family:var(--f-num);font-size:12px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:end}
+.row>*{flex:1 1 90px}
+.btn{background:var(--line);border:none;border-radius:6px;padding:9px 14px;cursor:pointer;font-weight:700}
+.btn.primary{background:var(--accent);color:#04121a}
+.btn.pink{background:var(--accent2);color:#1a0410}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.small{padding:5px 10px;font-weight:400;font-size:13px}
+.hint{font-size:12px;color:var(--dim);line-height:1.6;margin:0}
+
+/* stage */
+.stage{position:relative;width:100%;aspect-ratio:16/9;max-width:100%;background:#000;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+.stage .yt,.stage iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.shield{position:absolute;inset:0;z-index:2}
+.masks{position:absolute;inset:0;z-index:3;pointer-events:none}
+.mask{position:absolute;background:var(--mask);pointer-events:none}
+.editing .mask{pointer-events:auto;background:color-mix(in srgb,var(--accent2) 45%,transparent);outline:1px dashed var(--accent2);cursor:move}
+.editing .mask.sel{outline:2px solid var(--accent);background:color-mix(in srgb,var(--accent) 40%,transparent)}
+.mask .h{display:none;position:absolute;right:-6px;bottom:-6px;width:14px;height:14px;background:var(--accent);border-radius:3px;cursor:nwse-resize}
+.editing .mask .h{display:block}
+.curtain{position:absolute;inset:0;z-index:4;background:var(--mask);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:16px}
+.curtain .big{font-family:var(--f-display);font-size:clamp(22px,4vw,44px)}
+.curtain .sub{color:var(--dim);font-size:14px}
+.qno{position:absolute;left:12px;top:10px;z-index:5;font-family:var(--f-num);font-size:13px;background:color-mix(in srgb,var(--bg) 80%,transparent);padding:3px 8px;border-radius:4px;color:var(--accent)}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+
+/* answers */
+.players{display:flex;flex-direction:column;gap:8px}
+.pl{display:grid;grid-template-columns:minmax(0,1fr) 92px;gap:8px;align-items:center}
+.pl .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pl .name small{color:var(--dim);font-family:var(--f-num);margin-left:6px}
+.pl input{font-family:var(--f-num);font-size:18px;text-align:center;padding:6px}
+.reveal{border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:10px}
+.const{font-family:var(--f-num);font-weight:700;font-size:48px;line-height:1;color:var(--accent)}
+.song{font-weight:700;font-size:16px}
+.diff{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.08em;padding:2px 7px;border-radius:3px;margin-right:6px;vertical-align:2px}
+.d-MAS{background:#b84dff;color:#fff}.d-ULT{background:#222;color:#ff5555;outline:1px solid #ff5555}.d-EXP{background:#ff4f6a;color:#fff}.d-ADV{background:#ffa53d;color:#1a0c00}.d-BAS{background:#41d17c;color:#00170a}.d-WE{background:#e6e6e6;color:#111}
+.res{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:4px 12px;font-family:var(--f-num);font-size:14px}
+.res .n{font-family:var(--f-body)}
+.pts-100{color:var(--good)}.pts-75{color:var(--accent)}.pts-50{color:var(--warn)}.pts-25{color:var(--accent2)}.pts-0{color:var(--dim)}
+.score{display:flex;flex-direction:column;gap:6px}
+.score .s{display:grid;grid-template-columns:minmax(0,1fr) auto;font-variant-numeric:tabular-nums}
+.score .s b{font-family:var(--f-num)}
+
+/* bank */
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--dim);font-weight:400;font-size:12px}
+td.num{font-family:var(--f-num)}
+td a{color:var(--accent)}
+.empty{padding:28px 12px;text-align:center;color:var(--dim);line-height:1.8}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--accent);color:#04121a;padding:8px 16px;border-radius:6px;font-weight:700;z-index:50}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips label{flex-direction:row;align-items:center;gap:4px;color:var(--fg);font-size:13px}
+@media (prefers-reduced-motion:no-preference){.const{animation:pop .35s ease-out}@keyframes pop{from{transform:scale(.6);opacity:.2}}}
+</style>
+</head>
+<body>
+<header>
+  <h1>この譜面<span>なんでしょう</span></h1>
+  <nav>
+    <button id="tab-quiz" aria-pressed="true" data-view="quiz">クイズ</button>
+    <button id="tab-bank" aria-pressed="false" data-view="bank">問題リスト</button>
+    <button id="tab-mask" aria-pressed="false" data-view="mask">マスク調整</button>
+  </nav>
+</header>
+
+<main>
+  <!-- QUIZ -->
+  <section class="view" id="v-quiz">
+    <div style="min-width:0">
+      <div class="stage" id="stage">
+        <div class="yt" id="yt"></div>
+        <div class="shield"></div>
+        <div class="masks" id="masks"></div>
+        <div class="curtain" id="curtain">
+          <div class="big" id="curtainBig">READY?</div>
+          <div class="sub" id="curtainSub">問題リストに譜面動画を登録して「スタート」</div>
+          <button class="btn primary" id="btnPlayNow" hidden>▶ 再生する</button>
+        </div>
+        <div class="qno" id="qno" hidden></div>
+      </div>
+      <div class="controls">
+        <button class="btn small" id="btnReplay" disabled>最初から再生</button>
+        <button class="btn small" id="btnPause" disabled>一時停止</button>
+        <button class="btn small" id="btnUnmask" disabled>マスクを外す</button>
+        <p class="hint" id="ytHelp" hidden style="flex-basis:100%">開き方: index.html があるフォルダでターミナルを開いて <code>python -m http.server 8000</code> → ブラウザで <code>http://localhost:8000</code></p>
+        <label style="flex-direction:row;align-items:center;gap:6px">音量 <input id="vol" type="range" min="0" max="100" value="60" style="width:120px;padding:0"></label>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+      <div class="panel" id="setupPanel">
+        <h2>ゲーム設定</h2>
+        <label>参加者（改行かカンマ区切り）
+          <textarea id="playersInput" rows="3">タカヒロ</textarea>
+        </label>
+        <div class="row">
+          <label>問題数 <input id="nQ" type="number" min="1" value="10"></label>
+          <label>定数 下限 <input id="minC" type="number" step="0.1" value="1.0"></label>
+          <label>定数 上限 <input id="maxC" type="number" step="0.1" value="15.9"></label>
+        </div>
+        <div class="chips" id="diffFilter"></div>
+        <p class="hint" id="poolInfo"></p>
+        <button class="btn primary" id="btnStart">スタート</button>
+      </div>
+
+      <div class="panel" id="playPanel" hidden>
+        <h2 id="playTitle">回答</h2>
+        <div class="players" id="answerInputs"></div>
+        <button class="btn pink" id="btnAnswer">答え合わせ</button>
+        <div class="reveal" id="reveal" hidden>
+          <div>
+            <div class="const" id="rConst">--</div>
+          </div>
+          <div class="song" id="rSong"></div>
+          <div class="res" id="rRes"></div>
+          <button class="btn primary" id="btnNext">次の問題</button>
+        </div>
+        <div class="score" id="scoreBoard"></div>
+        <button class="btn small" id="btnQuit">ゲームをやめる</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- BANK -->
+  <section class="view" id="v-bank" hidden>
+    <div class="panel" style="min-width:0">
+      <h2>問題リスト <span id="bankCount" style="font-family:var(--f-num)"></span></h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th>難易度</th><th>定数</th><th>曲名</th><th>動画</th><th>開始</th><th>終了</th><th>マスク</th><th></th></tr></thead>
+        <tbody id="bankBody"></tbody>
+      </table></div>
+      <div class="empty" id="bankEmpty">まだ問題がない。右の「追加」から譜面動画のURLと定数を登録してね。<br>まとめて貼るなら「一括追加」が早い。</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+      <div class="panel" id="addForm">
+        <h2 id="addTitle">追加</h2>
+        <label>YouTube URL <input id="fUrl" placeholder="https://youtu.be/xxxxxxxxxxx?t=12"></label>
+        <label>曲名 <input id="fTitle" placeholder="答え合わせで表示"></label>
+        <div class="row">
+          <label>難易度 <select id="fDiff"><option>MAS</option><option>ULT</option><option>EXP</option><option>ADV</option><option>BAS</option><option>WE</option></select></label>
+          <label>定数 <input id="fConst" type="text" inputmode="decimal" placeholder="14.8"></label>
+        </div>
+        <div class="row">
+          <label>開始秒 <input id="fStart" type="number" min="0" step="1" placeholder="URLのt="></label>
+          <label>終了秒 <input id="fEnd" type="number" min="0" step="1" placeholder="空なら最後まで"></label>
+        </div>
+        <div class="row">
+          <button class="btn primary" type="button" id="fSubmit">追加</button>
+          <button class="btn" type="button" id="fCancel" hidden>キャンセル</button>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>一括追加</h2>
+        <p class="hint">1行1問。<code>URL, 定数, 難易度, 曲名, 開始秒, 終了秒</code>（後ろ3つは省略可、区切りはカンマかタブ）。スプレッドシートからそのまま貼れる。</p>
+        <textarea id="bulk" rows="5" placeholder="https://youtu.be/xxxxxxxxxxx, 14.8, MAS, 曲名, 5, 125"></textarea>
+        <button class="btn" id="btnBulk">まとめて追加</button>
+      </div>
+      <div class="panel">
+        <h2>共有</h2>
+        <p class="hint">問題リストとマスクをJSONでやり取りできる。友達に渡すときはコピーして貼ってもらう。</p>
+        <div class="row">
+          <button class="btn small" id="btnExport">JSONをコピー</button>
+          <button class="btn small" id="btnDownload">ファイル保存</button>
+          <label class="btn small" style="flex-direction:row;color:var(--fg)">読み込み<input type="file" id="fileIn" accept=".json,application/json" hidden></label>
+        </div>
+        <textarea id="jsonBox" rows="4" placeholder="ここにJSONを貼って「貼ったJSONを読み込む」"></textarea>
+        <button class="btn small" id="btnImport">貼ったJSONを読み込む（追加）</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- MASK -->
+  <section class="view" id="v-mask" hidden>
+    <div style="min-width:0">
+      <div class="stage editing" id="mstage">
+        <div class="yt" id="myt"></div>
+        <div class="shield"></div>
+        <div class="masks" id="mmasks"></div>
+        <div class="curtain" id="mcurtain" hidden><div class="sub">右で動画を選ぶと再生する</div></div>
+      </div>
+      <div class="controls">
+        <button class="btn small" id="mPlay">再生/停止</button>
+        <button class="btn small" id="mBack">-5秒</button>
+        <button class="btn small" id="mFwd">+5秒</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>マスク調整</h2>
+      <p class="hint">黒く隠す範囲をドラッグで動かす。右下の青い四角で大きさを変える。曲名・ジャケット・難易度・スコア・レベル表示などを隠す用。</p>
+      <label>確認に使う動画 <select id="mSel"></select></label>
+      <div class="row">
+        <button class="btn small" id="mAdd">四角を追加</button>
+        <button class="btn small" id="mDel">選択を削除</button>
+        <button class="btn small" id="mReset">初期配置に戻す</button>
+      </div>
+      <label>編集対象
+        <select id="mTarget">
+          <option value="default">全問共通のマスク</option>
+          <option value="this">この問題だけのマスク</option>
+        </select>
+      </label>
+      <div class="row">
+        <button class="btn primary" id="mSave">保存</button>
+        <button class="btn small" id="mClear">この問題の個別マスクを消す</button>
+      </div>
+      <p class="hint" id="mInfo"></p>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const KEY = 'chuniq.v1';
+const DIFFS = ['MAS','ULT','EXP','ADV','BAS','WE'];
+const DEFAULT_MASK = [
+  {x:0,y:0,w:100,h:14},     // 上の帯（曲情報・スコアのことが多い）
+  {x:0,y:88,w:100,h:12}     // 下の帯
+];
+const $ = id => document.getElementById(id);
+
+// ---------- storage ----------
+let db = {questions:[], defaultMask: DEFAULT_MASK.map(r=>({...r})), players:'タカヒロ'};
+try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && Array.isArray(s.questions)) db = {...db, ...s}; } catch(e) {}
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(db)); } catch(e) {} }
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>t.hidden=true,1800); }
+const uid = () => Math.random().toString(36).slice(2,10);
+const esc = s => String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// ---------- YouTube URL parsing ----------
+function parseTime(t){
+  if (!t) return null;
+  if (/^\d+$/.test(t)) return +t;
+  const m = t.match(/^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/);
+  return m ? (+(m[1]||0))*3600 + (+(m[2]||0))*60 + (+(m[3]||0)) : null;
+}
+function parseYT(input){
+  input = String(input).trim();
+  if (/^[\w-]{11}$/.test(input)) return {vid:input, t:null};
+  let u; try { u = new URL(input); } catch(e) { return null; }
+  let vid = null;
+  if (u.hostname.includes('youtu.be')) vid = u.pathname.slice(1,12);
+  else if (u.searchParams.get('v')) vid = u.searchParams.get('v');
+  else { const m = u.pathname.match(/\/(?:embed|shorts|live|v)\/([\w-]{11})/); if (m) vid = m[1]; }
+  if (!vid || !/^[\w-]{11}$/.test(vid)) return null;
+  return {vid, t: parseTime(u.searchParams.get('t') || u.searchParams.get('start'))};
+}
+function fmtSec(s){ if (s==null||s==='') return ''; s=+s; return Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0'); }
+
+// ---------- YouTube players ----------
+let ytReady = false, player = null, mplayer = null, endTimer = null;
+const ytQueue = [];
+window.onYouTubeIframeAPIReady = () => { ytReady = true; ytQueue.splice(0).forEach(f=>f()); };
+let ytFailed = false;
+function ytFail(){ if (ytReady) return; ytFailed = true; setCurtain(true, 'YouTubeに繋がらない', location.protocol==='file:' || window.origin==='null'
+  ? 'プレビューやファイル直開きだとYouTubeが動かない。ブラウザで http:// のURLから開いてね（下のヒント参照）'
+  : 'ネットワークか広告ブロッカーで youtube.com が止められてるかも'); $('ytHelp').hidden = false; }
+(function(){ const s=document.createElement('script'); s.src='https://www.youtube.com/iframe_api'; s.onerror=ytFail; document.head.appendChild(s); setTimeout(ytFail, 8000); })();
+const whenYT = f => ytReady ? f() : (ytFailed ? ytFail() : ytQueue.push(f));
+const YT_ERR = {2:'動画IDがおかしい', 5:'再生できない形式', 100:'動画が削除か非公開', 101:'投稿者が埋め込みを禁止してる', 150:'投稿者が埋め込みを禁止してる', 153:'ファイル直開きだと再生できない（http:// で開いてね）'};
+function onYTError(e){ setCurtain(true, '再生できない動画', (YT_ERR[e.data]||'エラー '+e.data) + '。「次の問題」で飛ばせる'); if (game && !game.revealed) { $('reveal').hidden=false; $('btnNext').textContent='次の問題'; } }
+const PV = {controls:0, disablekb:1, rel:0, iv_load_policy:3, fs:0, playsinline:1, modestbranding:1, cc_load_policy:0};
+
+function makePlayer(el, vid, start, onState){
+  return new Promise(res => whenYT(() => {
+    const p = new YT.Player(el, {videoId:vid, playerVars:{...PV, start:Math.floor(start||0), autoplay:1},
+      events:{onReady:e=>{ e.target.setVolume(+$('vol').value); e.target.playVideo(); res(p); }, onStateChange:onState, onError:onYTError}});
+  }));
+}
+
+// ---------- masks ----------
+function maskFor(q){ return (q && q.mask) ? q.mask : db.defaultMask; }
+function renderMasks(container, rects, editable, selIdx){
+  container.innerHTML = '';
+  rects.forEach((r,i) => {
+    const d = document.createElement('div');
+    d.className = 'mask' + (editable && i===selIdx ? ' sel' : '');
+    Object.assign(d.style, {left:r.x+'%', top:r.y+'%', width:r.w+'%', height:r.h+'%'});
+    d.dataset.i = i;
+    if (editable) d.innerHTML = '<div class="h"></div>';
+    container.appendChild(d);
+  });
+}
+
+// ---------- tabs ----------
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => showView(b.dataset.view));
+function showView(v){
+  document.querySelectorAll('nav button').forEach(b => b.setAttribute('aria-pressed', b.dataset.view===v));
+  ['quiz','bank','mask'].forEach(k => $('v-'+k).hidden = k!==v);
+  if (v!=='quiz' && player && player.pauseVideo) player.pauseVideo();
+  if (v!=='mask' && mplayer && mplayer.pauseVideo) mplayer.pauseVideo();
+  if (v==='bank') renderBank();
+  if (v==='mask') openMaskEditor();
+  if (v==='quiz') renderSetup();
+}
+
+// ---------- bank ----------
+let editingId = null;
+function renderBank(){
+  const qs = db.questions;
+  $('bankCount').textContent = qs.length ? `(${qs.length})` : '';
+  $('bankEmpty').hidden = qs.length>0;
+  $('bankBody').innerHTML = qs.map(q => `<tr>
+    <td><span class="diff d-${esc(q.diff)}">${esc(q.diff)}</span></td>
+    <td class="num">${(+q.constant).toFixed(1)}</td>
+    <td>${esc(q.title)||'<span style="color:var(--dim)">（未入力）</span>'}</td>
+    <td><a href="https://youtu.be/${esc(q.vid)}${q.start?'?t='+q.start:''}" target="_blank" rel="noopener">${esc(q.vid)}</a></td>
+    <td class="num">${fmtSec(q.start)}</td><td class="num">${fmtSec(q.end)}</td>
+    <td>${q.mask?'個別':'共通'}</td>
+    <td><button class="btn small" data-edit="${q.id}">編集</button> <button class="btn small" data-del="${q.id}">削除</button></td></tr>`).join('');
+}
+$('bankBody').onclick = e => {
+  const ed = e.target.dataset.edit, del = e.target.dataset.del;
+  if (del) {
+    if (e.target.dataset.armed) { db.questions = db.questions.filter(q=>q.id!==del); save(); renderBank(); toast('削除した'); }
+    else { e.target.dataset.armed = 1; e.target.textContent = '本当に削除'; e.target.classList.add('pink'); }
+  }
+  if (ed) {
+    const q = db.questions.find(q=>q.id===ed); editingId = ed;
+    $('fUrl').value = 'https://youtu.be/'+q.vid; $('fTitle').value = q.title||''; $('fDiff').value = q.diff;
+    $('fConst').value = q.constant; $('fStart').value = q.start??''; $('fEnd').value = q.end??'';
+    $('addTitle').textContent = '編集'; $('fSubmit').textContent = '更新'; $('fCancel').hidden = false;
+  }
+};
+function resetForm(){ ['fUrl','fTitle','fConst','fStart','fEnd'].forEach(id=>$(id).value=''); $('fDiff').value='MAS'; editingId=null; $('addTitle').textContent='追加'; $('fSubmit').textContent='追加'; $('fCancel').hidden=true; }
+$('fCancel').onclick = resetForm;
+$('fSubmit').onclick = () => {
+  const y = parseYT($('fUrl').value);
+  if (!y) { toast('YouTubeのURLとして読めなかった'); $('fUrl').focus(); return; }
+  const k = parseFloat($('fConst').value.replace(/[０-９．]/g, c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)));
+  if (isNaN(k)) { toast('定数を数字で入れてね（例: 14.8）'); $('fConst').focus(); return; }
+  const start = $('fStart').value!=='' ? +$('fStart').value : (y.t ?? 0);
+  const end = $('fEnd').value!=='' ? +$('fEnd').value : null;
+  const data = {vid:y.vid, start, end, constant:+k.toFixed(1), diff:$('fDiff').value, title:$('fTitle').value.trim()};
+  if (editingId) { Object.assign(db.questions.find(q=>q.id===editingId), data); toast('更新した'); }
+  else { db.questions.push({id:uid(), mask:null, ...data}); toast('追加した'); }
+  save(); resetForm(); renderBank();
+};
+function parseLine(line){
+  const c = line.split(/\t|,/).map(s=>s.trim());
+  const y = parseYT(c[0]); const k = parseFloat(c[1]);
+  if (!y || isNaN(k)) return null;
+  const diff = DIFFS.includes((c[2]||'').toUpperCase()) ? c[2].toUpperCase() : 'MAS';
+  return {id:uid(), mask:null, vid:y.vid, constant:+k.toFixed(1), diff, title:c[3]||'',
+    start: c[4]!==undefined && c[4]!=='' ? +c[4] : (y.t??0), end: c[5] ? +c[5] : null};
+}
+$('btnBulk').onclick = () => {
+  const lines = $('bulk').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  let ok=0, ng=0;
+  lines.forEach(l => { const q=parseLine(l); if (q){db.questions.push(q);ok++;} else ng++; });
+  save(); renderBank(); $('bulk').value='';
+  toast(`${ok}問追加` + (ng?`、${ng}行は読めなかった`:''));
+};
+const exportJSON = () => JSON.stringify({format:'chuniq', version:1, defaultMask:db.defaultMask, questions:db.questions}, null, 1);
+$('btnExport').onclick = () => {
+  const s = exportJSON();
+  navigator.clipboard.writeText(s).then(()=>toast('コピーした')).catch(()=>{ $('jsonBox').value=s; $('jsonBox').select(); toast('下の欄を選択したのでコピーしてね'); });
+};
+$('btnDownload').onclick = () => {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([exportJSON()],{type:'application/json'}));
+  a.download = 'chuniq-questions.json'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+};
+function importData(text){
+  let d; try { d = JSON.parse(text); } catch(e) { toast('JSONとして読めなかった'); return; }
+  const qs = Array.isArray(d) ? d : d.questions;
+  if (!Array.isArray(qs)) { toast('questions が見つからない'); return; }
+  const wasEmpty = db.questions.length===0;
+  const have = new Set(db.questions.map(q=>q.vid+'|'+q.diff+'|'+q.start));
+  let n=0;
+  qs.forEach(q => { if (!q.vid || isNaN(+q.constant)) return; const k=q.vid+'|'+q.diff+'|'+q.start; if (have.has(k)) return;
+    have.add(k); db.questions.push({id:uid(), mask:q.mask||null, vid:q.vid, constant:+(+q.constant).toFixed(1), diff:q.diff||'MAS', title:q.title||'', start:+q.start||0, end:q.end??null}); n++; });
+  if (Array.isArray(d.defaultMask) && wasEmpty) db.defaultMask = d.defaultMask;
+  save(); renderBank(); toast(`${n}問読み込んだ（重複はスキップ）`);
+}
+$('btnImport').onclick = () => importData($('jsonBox').value);
+$('fileIn').onchange = e => { const f=e.target.files[0]; if (!f) return; f.text().then(importData); e.target.value=''; };
+
+// ---------- quiz ----------
+const diffSel = new Set(['MAS','ULT','EXP']);
+$('diffFilter').innerHTML = DIFFS.map(d=>`<label><input type="checkbox" value="${d}" ${diffSel.has(d)?'checked':''}> <span class="diff d-${d}">${d}</span></label>`).join('');
+$('diffFilter').onchange = e => { e.target.checked ? diffSel.add(e.target.value) : diffSel.delete(e.target.value); renderSetup(); };
+$('playersInput').value = db.players;
+['minC','maxC'].forEach(id => $(id).oninput = renderSetup);
+function pool(){ const lo=+$('minC').value, hi=+$('maxC').value; return db.questions.filter(q => diffSel.has(q.diff) && q.constant>=lo-1e-9 && q.constant<=hi+1e-9); }
+function renderSetup(){
+  const n = pool().length;
+  $('poolInfo').textContent = db.questions.length ? `条件に合う問題: ${n}問` : '問題リストが空。先に「問題リスト」タブで登録してね。';
+  $('btnStart').disabled = n===0;
+}
+function points(diff){ const step = Math.round(Math.abs(diff)*10); return Math.max(0, 100 - 25*step); }
+
+let game = null;
+$('btnStart').onclick = () => {
+  const names = $('playersInput').value.split(/[\n,、]/).map(s=>s.trim()).filter(Boolean);
+  if (!names.length) { toast('参加者を1人以上入れてね'); return; }
+  db.players = names.join('\n'); save();
+  const p = pool().slice();
+  for (let i=p.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [p[i],p[j]]=[p[j],p[i]]; }
+  const n = Math.min(+$('nQ').value || 10, p.length);
+  game = {names, order:p.slice(0,n), idx:-1, total:Object.fromEntries(names.map(n=>[n,0])), exact:Object.fromEntries(names.map(n=>[n,0]))};
+  $('setupPanel').hidden = true; $('playPanel').hidden = false;
+  nextQ();
+};
+$('btnQuit').onclick = () => endGame(true);
+
+function setCurtain(on, big, sub){ $('curtain').hidden = !on; if (big!=null) $('curtainBig').textContent = big; if (sub!=null) $('curtainSub').textContent = sub; }
+function cur(){ return game.order[game.idx]; }
+
+async function nextQ(){
+  game.idx++;
+  if (game.idx >= game.order.length) return endGame(false);
+  const q = cur(); game.revealed = false; game.unmasked = false;
+  $('qno').hidden = false; $('qno').textContent = `Q${game.idx+1} / ${game.order.length}`;
+  $('playTitle').textContent = `Q${game.idx+1} の回答`;
+  $('answerInputs').innerHTML = game.names.map((n,i)=>`<div class="pl"><div class="name">${esc(n)}</div><input id="ans-${i}" type="number" step="0.1" min="0" inputmode="decimal" placeholder="--.-"></div>`).join('');
+  $('reveal').hidden = true; $('btnAnswer').hidden = false;
+  renderMasks($('masks'), maskFor(q), false);
+  renderScore();
+  setCurtain(true, `Q${game.idx+1}`, '読み込み中…');
+  ['btnReplay','btnPause','btnUnmask'].forEach(id=>$(id).disabled=false);
+  $('btnUnmask').textContent = 'マスクを外す';
+  await loadQuiz(q);
+}
+async function loadQuiz(q){
+  clearInterval(endTimer); $('btnPlayNow').hidden = true;
+  clearTimeout(loadQuiz.t); loadQuiz.t = setTimeout(() => { if (!$('curtain').hidden && player && player.getPlayerState && player.getPlayerState()!==1) { $('curtainSub').textContent='自動再生が止められたかも'; $('btnPlayNow').hidden=false; } }, 5000);
+  if (!player) {
+    player = await makePlayer('yt', q.vid, q.start, onQuizState);
+  } else {
+    player.loadVideoById({videoId:q.vid, startSeconds:q.start||0});
+  }
+  endTimer = setInterval(() => {
+    if (!player || !player.getCurrentTime || !game) return;
+    const c = cur(); if (c && c.end && player.getCurrentTime() >= c.end) { player.pauseVideo(); setCurtain(true, 'STOP', 'ここまで。定数を入れて「答え合わせ」'); }
+  }, 250);
+}
+function onQuizState(e){
+  // 1=playing: カーテンを開ける。0=ended: 関連動画が出る前に隠す
+  if (e.data === 1) { setCurtain(false); $('btnPlayNow').hidden = true; }
+  if (e.data === 0) setCurtain(true, 'END', '定数を入れて「答え合わせ」');
+}
+$('btnPlayNow').onclick = () => { if (player && player.playVideo) player.playVideo(); };
+$('btnReplay').onclick = () => { if (!player||!game) return; const q=cur(); setCurtain(true,null,'再生中…'); player.seekTo(q.start||0, true); player.playVideo(); };
+$('btnPause').onclick = () => { if (!player) return; const s=player.getPlayerState(); if (s===1){ player.pauseVideo(); setCurtain(true,'PAUSE',''); } else { player.playVideo(); } };
+$('btnUnmask').onclick = () => { if (!game) return; game.unmasked = !game.unmasked; $('masks').hidden = game.unmasked; $('btnUnmask').textContent = game.unmasked?'マスクを戻す':'マスクを外す'; };
+$('vol').oninput = e => { [player,mplayer].forEach(p=>p&&p.setVolume&&p.setVolume(+e.target.value)); };
+
+$('btnAnswer').onclick = () => {
+  if (!game || game.revealed) return;
+  const q = cur(); game.revealed = true;
+  const rows = game.names.map((n,i) => {
+    const v = $('ans-'+i).value; const a = v==='' ? null : +v;
+    const d = a==null ? null : +(a - q.constant).toFixed(1);
+    const pt = a==null ? 0 : points(d);
+    game.total[n] += pt; if (d===0) game.exact[n]++;
+    return {n, a, d, pt};
+  });
+  $('rConst').textContent = (+q.constant).toFixed(1);
+  $('rSong').innerHTML = `<span class="diff d-${esc(q.diff)}">${esc(q.diff)}</span>${esc(q.title)||'（曲名未登録）'}`;
+  $('rRes').innerHTML = rows.map(r => `<span class="n">${esc(r.n)}</span><span>${r.a==null?'—':r.a.toFixed(1)}${r.d==null?'':' ('+(r.d>0?'+':'')+r.d.toFixed(1)+')'}</span><span class="pts-${r.pt}">${r.pt}pt</span>`).join('');
+  $('reveal').hidden = false; $('btnAnswer').hidden = true;
+  $('btnNext').textContent = game.idx+1 >= game.order.length ? '結果を見る' : '次の問題';
+  renderScore();
+};
+$('btnNext').onclick = () => { $('masks').hidden = false; nextQ(); };
+$('answerInputs').addEventListener('keydown', e => { if (e.key==='Enter') { const ins=[...$('answerInputs').querySelectorAll('input')]; const i=ins.indexOf(e.target); if (i<ins.length-1) ins[i+1].focus(); else $('btnAnswer').click(); } });
+
+function renderScore(){
+  const s = Object.entries(game.total).sort((a,b)=>b[1]-a[1]);
+  $('scoreBoard').innerHTML = '<h2>スコア</h2>' + s.map(([n,v])=>`<div class="s"><span>${esc(n)} <small style="color:var(--dim)">ピタリ${game.exact[n]}</small></span><b>${v}</b></div>`).join('');
+}
+function endGame(quit){
+  clearInterval(endTimer);
+  if (player && player.stopVideo) player.stopVideo();
+  ['btnReplay','btnPause','btnUnmask'].forEach(id=>$(id).disabled=true);
+  $('masks').hidden = false; $('qno').hidden = true;
+  if (!quit && game) {
+    const s = Object.entries(game.total).sort((a,b)=>b[1]-a[1]);
+    const max = game.order.length*100;
+    setCurtain(true, `WINNER ${s[0][0]}`, s.map(([n,v])=>`${n} ${v}/${max}`).join('　'));
+  } else setCurtain(true, 'READY?', '設定を決めて「スタート」');
+  game = null; $('setupPanel').hidden = false; $('playPanel').hidden = true; renderSetup();
+}
+
+// ---------- mask editor ----------
+let mRects = [], mSel = -1, mQ = null;
+function openMaskEditor(){
+  const sel = $('mSel');
+  sel.innerHTML = db.questions.length ? db.questions.map(q=>`<option value="${q.id}">${esc(q.diff)} ${(+q.constant).toFixed(1)} ${esc(q.title||q.vid)}</option>`).join('') : '<option value="">（問題リストが空）</option>';
+  if (mQ && db.questions.some(q=>q.id===mQ.id)) sel.value = mQ.id;
+  loadMaskTarget();
+}
+function loadMaskTarget(){
+  mQ = db.questions.find(q=>q.id===$('mSel').value) || null;
+  if (!mQ) { $('mTarget').value = 'default'; }
+  mRects = ($('mTarget').value==='this' && mQ && mQ.mask ? mQ.mask : db.defaultMask).map(r=>({...r}));
+  mSel = -1; drawM();
+  $('mInfo').textContent = mQ ? (mQ.mask ? 'この問題は個別マスクを使っている。' : 'この問題は全問共通のマスクを使っている。') : '動画がないので黒い画面の上で調整する。';
+  $('mcurtain').hidden = !!mQ;
+  if (mQ) {
+    if (!mplayer) makePlayer('myt', mQ.vid, mQ.start, null).then(p=>mplayer=p);
+    else mplayer.loadVideoById({videoId:mQ.vid, startSeconds:mQ.start||0});
+  }
+}
+$('mSel').onchange = loadMaskTarget;
+$('mTarget').onchange = loadMaskTarget;
+function drawM(){ renderMasks($('mmasks'), mRects, true, mSel); }
+$('mAdd').onclick = () => { mRects.push({x:35,y:35,w:30,h:20}); mSel = mRects.length-1; drawM(); };
+$('mDel').onclick = () => { if (mSel<0) return; mRects.splice(mSel,1); mSel=-1; drawM(); };
+$('mReset').onclick = () => { mRects = DEFAULT_MASK.map(r=>({...r})); mSel=-1; drawM(); };
+$('mSave').onclick = () => {
+  const r = mRects.map(r=>({x:+r.x.toFixed(2),y:+r.y.toFixed(2),w:+r.w.toFixed(2),h:+r.h.toFixed(2)}));
+  if ($('mTarget').value==='this') { if (!mQ) return toast('問題を選んでね'); mQ.mask = r; toast('この問題のマスクを保存した'); }
+  else { db.defaultMask = r; toast('共通マスクを保存した'); }
+  save(); loadMaskTarget();
+};
+$('mClear').onclick = () => { if (!mQ) return; mQ.mask = null; save(); toast('個別マスクを消した（共通を使う）'); loadMaskTarget(); };
+$('mPlay').onclick = () => { if (!mplayer) return; mplayer.getPlayerState()===1 ? mplayer.pauseVideo() : mplayer.playVideo(); };
+$('mBack').onclick = () => mplayer && mplayer.seekTo(Math.max(0, mplayer.getCurrentTime()-5), true);
+$('mFwd').onclick = () => mplayer && mplayer.seekTo(mplayer.getCurrentTime()+5, true);
+
+// drag / resize (percent coordinates so it survives any window size)
+(function(){
+  const box = $('mmasks'); let drag = null;
+  box.addEventListener('pointerdown', e => {
+    const el = e.target.closest('.mask'); if (!el) { mSel=-1; drawM(); return; }
+    const i = +el.dataset.i; mSel = i;
+    const rect = box.getBoundingClientRect();
+    drag = {i, mode: e.target.classList.contains('h') ? 'resize' : 'move', sx:e.clientX, sy:e.clientY, r:{...mRects[i]}, W:rect.width, H:rect.height};
+    drawM(); box.setPointerCapture(e.pointerId); e.preventDefault();
+  });
+  box.addEventListener('pointermove', e => {
+    if (!drag) return;
+    const dx = (e.clientX-drag.sx)/drag.W*100, dy = (e.clientY-drag.sy)/drag.H*100, r = mRects[drag.i], o = drag.r;
+    if (drag.mode==='move') { r.x = Math.min(100-o.w, Math.max(0, o.x+dx)); r.y = Math.min(100-o.h, Math.max(0, o.y+dy)); }
+    else { r.w = Math.min(100-o.x, Math.max(2, o.w+dx)); r.h = Math.min(100-o.y, Math.max(2, o.h+dy)); }
+    const el = box.children[drag.i]; Object.assign(el.style, {left:r.x+'%', top:r.y+'%', width:r.w+'%', height:r.h+'%'});
+  });
+  const up = () => drag = null;
+  box.addEventListener('pointerup', up); box.addEventListener('pointercancel', up);
+  $('mstage').querySelector('.masks').style.pointerEvents = 'auto';
+})();
+
+renderMasks($('masks'), db.defaultMask, false);
+renderSetup();
+</script>
+</body>
+</html>
