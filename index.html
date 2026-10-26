@@ -140,6 +140,7 @@ td a{color:var(--accent)}
         </div>
         <div class="chips" id="diffFilter"></div>
         <p class="hint" id="poolInfo"></p>
+        <button class="btn" id="btnPreset2" hidden>おすすめセットを入れる</button>
         <button class="btn primary" id="btnStart">スタート</button>
       </div>
 
@@ -169,7 +170,7 @@ td a{color:var(--accent)}
         <thead><tr><th>難易度</th><th>定数</th><th>曲名</th><th>動画</th><th>開始</th><th>終了</th><th>マスク</th><th></th></tr></thead>
         <tbody id="bankBody"></tbody>
       </table></div>
-      <div class="empty" id="bankEmpty">まだ問題がない。右の「追加」から譜面動画のURLと定数を登録してね。<br>まとめて貼るなら「一括追加」が早い。</div>
+      <div class="empty" id="bankEmpty">まだ問題がない。右の「おすすめセットを追加」を押すと、すぐ遊べる問題が入る。<br>自分で選ぶなら「追加」や「曲を選んで追加」から。</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
       <div class="panel" id="addForm">
@@ -188,6 +189,11 @@ td a{color:var(--accent)}
           <button class="btn primary" type="button" id="fSubmit">追加</button>
           <button class="btn" type="button" id="fCancel" hidden>キャンセル</button>
         </div>
+      </div>
+      <div class="panel">
+        <h2>おすすめセット</h2>
+        <p class="hint">YouTubeの譜面確認動画シリーズから集めたMASTER/ULTIMAの譜面。定数は OTOGE DB の値。キーもURL貼りも要らない。</p>
+        <button class="btn primary" id="btnPreset">おすすめセットを追加</button>
       </div>
       <div class="panel">
         <h2>おまかせ追加</h2>
@@ -517,6 +523,13 @@ function importData(text){
   if (Array.isArray(d.defaultMask) && wasEmpty) db.defaultMask = d.defaultMask;
   save(); renderBank(); toast(`${n}問読み込んだ（重複はスキップ）`);
 }
+function addPreset(){
+  return fetch('presets/fumen-kakunin.json').then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
+    .then(t => { importData(t); renderSetup(); })
+    .catch(() => toast('おすすめセットを読み込めなかった（サイトのURLから開いてね）'));
+}
+$('btnPreset').onclick = addPreset;
+$('btnPreset2').onclick = addPreset;
 $('btnImport').onclick = () => importData($('jsonBox').value);
 $('fileIn').onchange = e => { const f=e.target.files[0]; if (!f) return; f.text().then(importData); e.target.value=''; };
 
@@ -531,6 +544,7 @@ function renderSetup(){
   const n = pool().length;
   $('poolInfo').textContent = db.questions.length ? `条件に合う問題: ${n}問` : '問題リストが空。先に「問題リスト」タブで登録してね。';
   $('btnStart').disabled = n===0;
+  $('btnPreset2').hidden = db.questions.length > 0;
 }
 function points(diff){ const step = Math.round(Math.abs(diff)*10); return Math.max(0, 100 - 25*step); }
 

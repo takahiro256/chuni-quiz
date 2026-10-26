@@ -1,0 +1,576 @@
+{
+ "format": "chuniq",
+ "version": 1,
+ "name": "譜面確認動画セット",
+ "source": "YouTube「(譜面確認) [CHUNITHM チュウニズム]」シリーズ / 定数: OTOGE DB",
+ "questions": [
+  {
+   "vid": "eT25vCD36MQ",
+   "constant": 15.7,
+   "diff": "MAS",
+   "title": "Crossmythos Rhapsodia",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "WT7gq5LJ0WQ",
+   "constant": 15.6,
+   "diff": "MAS",
+   "title": "神鳴",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "jR9xRsmpjuE",
+   "constant": 15.6,
+   "diff": "MAS",
+   "title": "Ultimate Force",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "0ghVYVWfdms",
+   "constant": 15.5,
+   "diff": "MAS",
+   "title": "μ3",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "NfTQnb3x6FM",
+   "constant": 15.5,
+   "diff": "MAS",
+   "title": "月葬",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "IamPFLov_Hs",
+   "constant": 15.5,
+   "diff": "MAS",
+   "title": "Tru'nembra",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "jQy_JsIAEfE",
+   "constant": 15.4,
+   "diff": "MAS",
+   "title": "OUTRAGE",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "AnpJOO6rKqo",
+   "constant": 15.3,
+   "diff": "MAS",
+   "title": "[IMPERIALDISORDER]",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "H-8FZybJH40",
+   "constant": 15.3,
+   "diff": "MAS",
+   "title": "Tachy∅n",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "n8LRI7oCloU",
+   "constant": 15.3,
+   "diff": "MAS",
+   "title": "HeinousЯeaper",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "yGe9wFUU3n4",
+   "constant": 15.3,
+   "diff": "MAS",
+   "title": "LibrariA",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "7BDrS7mxYMM",
+   "constant": 15.2,
+   "diff": "MAS",
+   "title": "AiAe",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "X_pq19TwEAM",
+   "constant": 15.2,
+   "diff": "MAS",
+   "title": "I Wanna",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "Qph1frRISQ0",
+   "constant": 15.2,
+   "diff": "MAS",
+   "title": "零號車輛",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "X0yQx1fp_18",
+   "constant": 15.1,
+   "diff": "MAS",
+   "title": "ARAIS",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "R4IZIcQ3_bo",
+   "constant": 15.1,
+   "diff": "MAS",
+   "title": "チュウニペンギンのテーマ～左下より愛をこめて～",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "GCOn5rbef3U",
+   "constant": 15.1,
+   "diff": "MAS",
+   "title": "HERA",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "orCqm1Ig1vI",
+   "constant": 15.1,
+   "diff": "MAS",
+   "title": "躯樹の墓守",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "gXNjB9QyWU4",
+   "constant": 15.0,
+   "diff": "MAS",
+   "title": "封焔の135秒",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "OmZ_Rk0qFQI",
+   "constant": 15.0,
+   "diff": "MAS",
+   "title": "淵底のグレイ・ユークロニア",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "J_jKQtxxG0k",
+   "constant": 15.0,
+   "diff": "MAS",
+   "title": "竹",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "xTnwjcxy2FY",
+   "constant": 14.9,
+   "diff": "MAS",
+   "title": "Tempestissimo",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "zdOFJ0rZf8U",
+   "constant": 14.9,
+   "diff": "MAS",
+   "title": "Hainuwele",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "wrNtO3dBdJo",
+   "constant": 14.9,
+   "diff": "MAS",
+   "title": "Superbia",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "el1ns4ZyyMo",
+   "constant": 14.8,
+   "diff": "MAS",
+   "title": "DEvourER",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "VZcQB9xSQJY",
+   "constant": 14.8,
+   "diff": "MAS",
+   "title": "8-EM",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "21fQAnQSKL4",
+   "constant": 14.7,
+   "diff": "MAS",
+   "title": "BIRTH",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "w1kywE1iRIE",
+   "constant": 14.6,
+   "diff": "MAS",
+   "title": "バカ通信",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "FAV3li0dPlc",
+   "constant": 14.4,
+   "diff": "MAS",
+   "title": "ちゅ、お注射。",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "P-KI-F0Qi50",
+   "constant": 14.4,
+   "diff": "MAS",
+   "title": "LAST PROPOZE",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "Ji5iRyj5p5k",
+   "constant": 14.4,
+   "diff": "MAS",
+   "title": "オススメ☆♂♀☆でぃすとぴあ",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "1NZRaLrVN6A",
+   "constant": 14.4,
+   "diff": "MAS",
+   "title": "☆をつなぐシュトラール",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "BhXPCiqFN3c",
+   "constant": 14.3,
+   "diff": "MAS",
+   "title": "薄明のクオリア",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "u8DbcUF8eVc",
+   "constant": 14.2,
+   "diff": "MAS",
+   "title": "人マニア",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "SmsrsRKILsg",
+   "constant": 14.2,
+   "diff": "MAS",
+   "title": "テトリス",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "YPKT4DpcriA",
+   "constant": 14.2,
+   "diff": "MAS",
+   "title": "ふぁんぶる！",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "iuqVDwBrKe4",
+   "constant": 14.2,
+   "diff": "MAS",
+   "title": "分からない",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "4bQL1JT6SdM",
+   "constant": 14.1,
+   "diff": "MAS",
+   "title": "CO5M1C R4ILR0AD",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "A30iMVRiOro",
+   "constant": 14.0,
+   "diff": "MAS",
+   "title": "MUSIC PЯAYER",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "QNGN2deVzp0",
+   "constant": 14.0,
+   "diff": "MAS",
+   "title": "C & B",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "j6fEb_LInVM",
+   "constant": 14.0,
+   "diff": "MAS",
+   "title": "東方妖々夢 ～the maximum moving about～",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "n1DftkrZVwc",
+   "constant": 14.0,
+   "diff": "MAS",
+   "title": "Burn!!!",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "sAy8oWmCKhE",
+   "constant": 13.9,
+   "diff": "MAS",
+   "title": "単位がない！",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "VXlNiCTNP4w",
+   "constant": 13.9,
+   "diff": "MAS",
+   "title": "snooze",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "zWjyLawpaWg",
+   "constant": 13.9,
+   "diff": "MAS",
+   "title": "Unwelcome School",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "GMPzY48adu8",
+   "constant": 13.6,
+   "diff": "MAS",
+   "title": "システム",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "GgaZW3wjQPA",
+   "constant": 13.6,
+   "diff": "MAS",
+   "title": "ヒアソビ",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "5ZxproeCprU",
+   "constant": 13.6,
+   "diff": "MAS",
+   "title": "L9",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "4sm5jLAjcyI",
+   "constant": 13.5,
+   "diff": "MAS",
+   "title": "STAR",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "KJHaKzUiB7E",
+   "constant": 13.4,
+   "diff": "MAS",
+   "title": "匿名M",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "-k64xFpIqjg",
+   "constant": 13.3,
+   "diff": "MAS",
+   "title": "アニマル",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "z9KynxQ1xJ4",
+   "constant": 13.3,
+   "diff": "MAS",
+   "title": "超Rock The Party",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "uUbwDgufjRc",
+   "constant": 13.2,
+   "diff": "MAS",
+   "title": "シリウスの輝きのように",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "cY3baoX80WI",
+   "constant": 13.2,
+   "diff": "MAS",
+   "title": "モア！ジャンプ！モア！",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "AF3XhjsPxqQ",
+   "constant": 13.1,
+   "diff": "MAS",
+   "title": "ステラ",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "LwWv-v0-lBI",
+   "constant": 13.1,
+   "diff": "MAS",
+   "title": "生きる",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "AUH5OaWj1Q4",
+   "constant": 13.0,
+   "diff": "MAS",
+   "title": "シャオシャオ蘭々♪",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "sC5QpU1JJIA",
+   "constant": 13.0,
+   "diff": "MAS",
+   "title": "インターネットサバイバー",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "R1Cm9LoBhLM",
+   "constant": 15.8,
+   "diff": "ULT",
+   "title": "YOUNITHM",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "hTtMMKh37ks",
+   "constant": 15.3,
+   "diff": "ULT",
+   "title": "Theatore Creatore",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "6CuLMdBTIo4",
+   "constant": 15.1,
+   "diff": "ULT",
+   "title": "DataErr0r",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "wGj-ygOO3Ug",
+   "constant": 15.1,
+   "diff": "ULT",
+   "title": "Halcyon",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "9UR8Dg0jx3U",
+   "constant": 15.1,
+   "diff": "ULT",
+   "title": "Philosopher",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "0PoOu6Kb3D0",
+   "constant": 15.1,
+   "diff": "ULT",
+   "title": "ERIS -Legend of Gaidelia-",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "cpJbhSkydrQ",
+   "constant": 15.0,
+   "diff": "ULT",
+   "title": "Unwelcome School",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "J-bCdmOCzMU",
+   "constant": 14.9,
+   "diff": "ULT",
+   "title": "化けの花",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "XPQyB-GGQ2I",
+   "constant": 14.2,
+   "diff": "ULT",
+   "title": "唱",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "A8d9iL5g2Lo",
+   "constant": 14.2,
+   "diff": "ULT",
+   "title": "Guilty",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "DTS3EMSa9eE",
+   "constant": 14.0,
+   "diff": "ULT",
+   "title": "ヒバナ",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "OX71dNkR9Rs",
+   "constant": 13.7,
+   "diff": "ULT",
+   "title": "Reach For The Stars",
+   "start": 0,
+   "end": null
+  },
+  {
+   "vid": "f3i0HbETPqo",
+   "constant": 13.2,
+   "diff": "ULT",
+   "title": "After the rain",
+   "start": 0,
+   "end": null
+  }
+ ]
+}
