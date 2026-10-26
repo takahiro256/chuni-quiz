@@ -254,18 +254,20 @@ const KEY = 'chuniq.v1';
 const DIFFS = ['MAS','ULT','EXP','ADV','BAS','WE'];
 const DEFAULT_MASK = [
   {x:0,y:0,w:100,h:14},      // 上の帯
-  {x:0,y:88,w:100,h:12},     // 下の帯
   {x:70,y:0,w:30,h:17.5},    // 右上: ジャケット・作曲者
   {x:0,y:19,w:31.5,h:28}     // 左: SELECT CHARACTER
 ];
-const OLD_DEFAULT_MASK = '[{"x":0,"y":0,"w":100,"h":14},{"x":0,"y":88,"w":100,"h":12}]';
+const OLD_DEFAULT_MASKS = [
+  '[{"x":0,"y":0,"w":100,"h":14},{"x":0,"y":88,"w":100,"h":12}]',
+  '[{"x":0,"y":0,"w":100,"h":14},{"x":0,"y":88,"w":100,"h":12},{"x":70,"y":0,"w":30,"h":17.5},{"x":0,"y":19,"w":31.5,"h":28}]'
+];
 const $ = id => document.getElementById(id);
 
 // ---------- storage ----------
 let db = {questions:[], defaultMask: DEFAULT_MASK.map(r=>({...r})), players:'タカヒロ'};
 try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && Array.isArray(s.questions)) db = {...db, ...s}; } catch(e) {}
 // 古い初期マスクのまま保存されていたら新しい初期配置に置き換える
-if (JSON.stringify(db.defaultMask) === OLD_DEFAULT_MASK) db.defaultMask = DEFAULT_MASK.map(r=>({...r}));
+if (OLD_DEFAULT_MASKS.includes(JSON.stringify(db.defaultMask))) db.defaultMask = DEFAULT_MASK.map(r=>({...r}));
 function save(){ try { localStorage.setItem(KEY, JSON.stringify(db)); } catch(e) {} }
 function toast(msg){ const t=$('toast'); t.textContent=msg; t.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>t.hidden=true,1800); }
 const uid = () => Math.random().toString(36).slice(2,10);
