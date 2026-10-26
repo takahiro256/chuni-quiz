@@ -123,7 +123,7 @@ td a{color:var(--accent)}
         <button class="btn small" id="btnPause" disabled>一時停止</button>
         <button class="btn small" id="btnUnmask" disabled>マスクを外す</button>
         <p class="hint" id="ytHelp" hidden style="flex-basis:100%">開き方: index.html があるフォルダでターミナルを開いて <code>python -m http.server 8000</code> → ブラウザで <code>http://localhost:8000</code></p>
-        <label style="flex-direction:row;align-items:center;gap:6px">音量 <input id="vol" type="range" min="0" max="100" value="60" style="width:120px;padding:0"></label>
+        <label style="flex-direction:row;align-items:center;gap:6px">音量 <input id="vol" type="range" min="0" max="100" value="30" style="width:120px;padding:0"></label>
       </div>
     </div>
 
@@ -502,7 +502,8 @@ $('btnPlayNow').onclick = () => { if (player && player.playVideo) player.playVid
 $('btnReplay').onclick = () => { if (!player||!game) return; const q=cur(); setCurtain(true,null,'再生中…'); player.seekTo(q.start||0, true); player.playVideo(); };
 $('btnPause').onclick = () => { if (!player) return; const s=player.getPlayerState(); if (s===1){ player.pauseVideo(); setCurtain(true,'PAUSE',''); } else { player.playVideo(); } };
 $('btnUnmask').onclick = () => { if (!game) return; game.unmasked = !game.unmasked; $('masks').hidden = game.unmasked; $('btnUnmask').textContent = game.unmasked?'マスクを戻す':'マスクを外す'; };
-$('vol').oninput = e => { [player,mplayer].forEach(p=>p&&p.setVolume&&p.setVolume(+e.target.value)); };
+try { const v = localStorage.getItem('chuniq.vol'); if (v !== null) $('vol').value = v; } catch(e) {}
+$('vol').oninput = e => { [player,mplayer].forEach(p=>p&&p.setVolume&&p.setVolume(+e.target.value)); try { localStorage.setItem('chuniq.vol', e.target.value); } catch(err) {} };
 
 $('btnAnswer').onclick = () => {
   if (!game || game.revealed) return;
