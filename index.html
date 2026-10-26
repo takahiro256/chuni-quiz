@@ -308,7 +308,7 @@ const PV = {controls:0, disablekb:1, rel:0, iv_load_policy:3, fs:0, playsinline:
 function makePlayer(el, vid, start, onState){
   return new Promise(res => whenYT(() => {
     const p = new YT.Player(el, {videoId:vid, playerVars:{...PV, start:Math.floor(start||0), autoplay:1},
-      events:{onReady:e=>{ e.target.setVolume(+$('vol').value); e.target.playVideo(); res(p); }, onStateChange:onState, onError:onYTError}});
+      events:{onReady:e=>{ e.target.setVolume(+$('vol').value); if (el==='yt') e.target.mute(); e.target.playVideo(); res(p); }, onStateChange:onState, onError:onYTError}});
   }));
 }
 
@@ -465,22 +465,35 @@ async function nextQ(){
   $('btnUnmask').textContent = 'マスクを外す';
   await loadQuiz(q);
 }
+// 広告対策: 最初はミュート＋カーテン。本編の再生位置が開始秒付近から実際に進み始めたら音を出して画面を見せる
+let gate = null;
 async function loadQuiz(q){
+  gate = {armed:true, t0:null};
   clearInterval(endTimer); $('btnPlayNow').hidden = true;
   clearTimeout(loadQuiz.t); loadQuiz.t = setTimeout(() => { if (!$('curtain').hidden && player && player.getPlayerState && player.getPlayerState()!==1) { $('curtainSub').textContent='自動再生が止められたかも'; $('btnPlayNow').hidden=false; } }, 5000);
   if (!player) {
     player = await makePlayer('yt', q.vid, q.start, onQuizState);
   } else {
+    player.mute();
     player.loadVideoById({videoId:q.vid, startSeconds:q.start||0});
   }
   endTimer = setInterval(() => {
     if (!player || !player.getCurrentTime || !game) return;
-    const c = cur(); if (c && c.end && player.getCurrentTime() >= c.end) { player.pauseVideo(); setCurtain(true, 'STOP', 'ここまで。定数を入れて「答え合わせ」'); }
+    const c = cur();
+    if (gate && gate.armed && player.getPlayerState && player.getPlayerState()===1) {
+      const t = player.getCurrentTime(), st = (c && c.start) || 0;
+      if (t >= st - 1 && t < st + 30) {
+        if (gate.t0 == null) gate.t0 = t;
+        else if (t - gate.t0 > 0.4) { gate.armed = false; player.unMute(); setCurtain(false); $('btnPlayNow').hidden = true; }
+      }
+    }
+    if (c && c.end && player.getCurrentTime() >= c.end) { player.pauseVideo(); setCurtain(true, 'STOP', 'ここまで。定数を入れて「答え合わせ」'); }
   }, 250);
 }
 function onQuizState(e){
   // 1=playing: カーテンを開ける。0=ended: 関連動画が出る前に隠す
-  if (e.data === 1) { setCurtain(false); $('btnPlayNow').hidden = true; }
+  if (e.data === 1 && !(gate && gate.armed)) { setCurtain(false); $('btnPlayNow').hidden = true; }
+  if (e.data === 1 && gate && gate.armed) { $('curtainSub').textContent = '再生準備中…（広告中は音を消してる）'; $('btnPlayNow').hidden = true; }
   if (e.data === 0) setCurtain(true, 'END', '定数を入れて「答え合わせ」');
 }
 $('btnPlayNow').onclick = () => { if (player && player.playVideo) player.playVideo(); };
