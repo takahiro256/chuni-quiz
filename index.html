@@ -330,12 +330,14 @@ function ytFail(){ if (ytReady) return; ytFailed = true; setCurtain(true, 'YouTu
 const whenYT = f => ytReady ? f() : (ytFailed ? ytFail() : ytQueue.push(f));
 const YT_ERR = {2:'動画IDがおかしい', 5:'再生できない形式', 100:'動画が削除か非公開', 101:'投稿者が埋め込みを禁止してる', 150:'投稿者が埋め込みを禁止してる', 153:'ファイル直開きだと再生できない（http:// で開いてね）'};
 function onYTError(e){ setCurtain(true, '再生できない動画', (YT_ERR[e.data]||'エラー '+e.data) + '。「次の問題」で飛ばせる'); if (game && !game.revealed) { $('reveal').hidden=false; $('btnNext').textContent='次の問題'; } }
-const PV = {controls:0, disablekb:1, rel:0, iv_load_policy:3, fs:0, playsinline:1, modestbranding:1, cc_load_policy:0};
+const PV = {controls:0, disablekb:1, rel:0, iv_load_policy:3, fs:0, playsinline:1, modestbranding:1, cc_load_policy:0, cc_lang_pref:'xx'};
 
+// 字幕（自動字幕・翻訳含む）を毎回オフにする。アカウント設定で字幕ONの人向け
+function killCaptions(p){ try { p.unloadModule('captions'); p.unloadModule('cc'); p.setOption('captions','track',{}); } catch(e) {} }
 function makePlayer(el, vid, start, onState){
   return new Promise(res => whenYT(() => {
     const p = new YT.Player(el, {videoId:vid, playerVars:{...PV, start:Math.floor(start||0), autoplay:1},
-      events:{onReady:e=>{ e.target.setVolume(+$('vol').value); if (el==='yt') e.target.mute(); e.target.playVideo(); res(p); }, onStateChange:onState, onError:onYTError}});
+      events:{onReady:e=>{ e.target.setVolume(+$('vol').value); if (el==='yt') e.target.mute(); e.target.playVideo(); res(p); }, onStateChange:e=>{ if (e.data===1 || e.data===3) killCaptions(e.target); onState && onState(e); }, onApiChange:e=>killCaptions(e.target), onError:onYTError}});
   }));
 }
 
