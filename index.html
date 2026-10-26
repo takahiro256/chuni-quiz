@@ -190,6 +190,25 @@ td a{color:var(--accent)}
         </div>
       </div>
       <div class="panel">
+        <h2>おまかせ追加</h2>
+        <p class="hint">曲と定数は <a href="https://otoge-db.net/chunithm/" target="_blank" rel="noopener" style="color:var(--accent)">OTOGE DB</a> の譜面定数データから自動で入る。動画は YouTube API キーがあれば自動で探す。</p>
+        <div class="row">
+          <label>定数 下限 <input id="aMin" type="text" inputmode="decimal" value="14.0"></label>
+          <label>定数 上限 <input id="aMax" type="text" inputmode="decimal" value="15.4"></label>
+          <label>問題数 <input id="aN" type="number" min="1" max="50" value="10"></label>
+        </div>
+        <div class="chips" id="aDiffs"></div>
+        <label>YouTube API キー（ブラウザにだけ保存）<input id="aKey" type="password" autocomplete="off" placeholder="AIza..."></label>
+        <button class="btn primary" id="btnAuto">おまかせで追加</button>
+        <p class="hint" id="aInfo"></p>
+      </div>
+      <div class="panel">
+        <h2>曲を選んで追加</h2>
+        <label>曲名で検索 <input id="sQ" type="text" placeholder="曲名・読み・アーティスト"></label>
+        <div id="sRes" style="display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto"></div>
+        <p class="hint">難易度のボタンを押すとYouTube検索が開くので、譜面動画のURLをコピーして上の「追加」欄に貼る（曲名と定数は自動で入る）。</p>
+      </div>
+      <div class="panel">
         <h2>一括追加</h2>
         <p class="hint">1行1問。<code>URL, 定数, 難易度, 曲名, 開始秒, 終了秒</code>（後ろ3つは省略可、区切りはカンマかタブ）。スプレッドシートからそのまま貼れる。</p>
         <textarea id="bulk" rows="5" placeholder="https://youtu.be/xxxxxxxxxxx, 14.8, MAS, 曲名, 5, 125"></textarea>
@@ -390,6 +409,86 @@ function parseLine(line){
   return {id:uid(), mask:null, vid:y.vid, constant:+k.toFixed(1), diff, title:c[3]||'',
     start: c[4]!==undefined && c[4]!=='' ? +c[4] : (y.t??0), end: c[5] ? +c[5] : null};
 }
+
+// ---------- song DB (OTOGE DB) ----------
+const SONG_DB_URL = 'https://raw.githubusercontent.com/zvuc/otoge-db/master/chunithm/data/music-ex.json';
+const DKEY = {BAS:'bas', ADV:'adv', EXP:'exp', MAS:'mas', ULT:'ult'};
+let songs = null, songsP = null;
+function loadSongs(){
+  if (songs) return Promise.resolve(songs);
+  if (!songsP) songsP = fetch(SONG_DB_URL).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(d => songs = d.filter(x => !x.we_kanji)).catch(e => { songsP = null; throw e; });
+  return songsP;
+}
+function charts(list, diffs, lo, hi){
+  const out = [];
+  list.forEach(x => diffs.forEach(df => { const c = parseFloat(x['lev_'+DKEY[df]+'_i']); if (!isNaN(c) && c>=lo-1e-9 && c<=hi+1e-9) out.push({song:x, diff:df, constant:c}); }));
+  return out;
+}
+const aDiffSel = new Set(['MAS','ULT']);
+$('aDiffs').innerHTML = ['MAS','ULT','EXP','ADV','BAS'].map(d=>`<label><input type="checkbox" value="${d}" ${aDiffSel.has(d)?'checked':''}> <span class="diff d-${d}">${d}</span></label>`).join('');
+$('aDiffs').onchange = e => { e.target.checked ? aDiffSel.add(e.target.value) : aDiffSel.delete(e.target.value); };
+try { $('aKey').value = localStorage.getItem('chuniq.ytkey') || ''; } catch(e) {}
+$('aKey').onchange = () => { try { localStorage.setItem('chuniq.ytkey', $('aKey').value.trim()); } catch(e) {} };
+const num = v => parseFloat(String(v).replace(/[０-９．]/g, c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)));
+
+async function ytSearch(key, q){
+  const u = 'https://www.googleapis.com/youtube/v3/search?' + new URLSearchParams({part:'snippet', type:'video', videoEmbeddable:'true', maxResults:'5', q, key});
+  const r = await fetch(u); const d = await r.json();
+  if (!r.ok) throw new Error((d.error && d.error.message) || r.status);
+  return d.items || [];
+}
+const norm = t => String(t).toLowerCase().replace(/[\s　]/g,'');
+$('btnAuto').onclick = async () => {
+  const key = $('aKey').value.trim(), lo = num($('aMin').value), hi = num($('aMax').value), n = Math.max(1, Math.min(50, +$('aN').value || 10));
+  if (!key) { $('aInfo').textContent = 'APIキーが空。キーなしなら下の「曲を選んで追加」から。'; return; }
+  if (isNaN(lo) || isNaN(hi)) { $('aInfo').textContent = '定数の範囲を数字で入れてね'; return; }
+  try { localStorage.setItem('chuniq.ytkey', key); } catch(e) {}
+  $('btnAuto').disabled = true; $('aInfo').textContent = '譜面データを読み込み中…';
+  try {
+    const all = charts(await loadSongs(), [...aDiffSel], lo, hi);
+    const have = new Set(db.questions.map(q => q.title+'|'+q.diff));
+    const cand = all.filter(c => !have.has(c.song.title+'|'+c.diff));
+    for (let i=cand.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [cand[i],cand[j]]=[cand[j],cand[i]]; }
+    let added = 0, miss = [];
+    for (const c of cand) {
+      if (added >= n) break;
+      $('aInfo').textContent = `動画を検索中… ${added}/${n}（${c.song.title}）`;
+      const label = c.diff==='MAS' ? 'MASTER' : c.diff==='ULT' ? 'ULTIMA' : c.diff==='EXP' ? 'EXPERT' : c.diff;
+      const items = await ytSearch(key, `CHUNITHM ${c.song.title} ${label}`);
+      // タイトルに曲名と難易度が両方入ってる動画だけ採用（別の譜面を拾わないように）
+      const hit = items.find(it => { const t = norm(it.snippet.title); return t.includes(norm(c.song.title)) && (t.includes(label.toLowerCase()) || t.includes(c.diff.toLowerCase())); });
+      if (!hit) { miss.push(c.song.title); continue; }
+      db.questions.push({id:uid(), mask:null, vid:hit.id.videoId, constant:+c.constant.toFixed(1), diff:c.diff, title:c.song.title, start:0, end:null});
+      added++; save();
+    }
+    renderBank();
+    $('aInfo').textContent = `${added}問追加した` + (miss.length ? `。動画が見つからなかった曲: ${miss.slice(0,5).join('、')}${miss.length>5?' ほか':''}` : '') + (added < n && cand.length <= added + miss.length ? '（条件に合う譜面が足りなかった）' : '');
+  } catch(e) {
+    $('aInfo').textContent = '失敗: ' + e.message + '（APIキーか1日の上限を確認してね）';
+  } finally { $('btnAuto').disabled = false; }
+};
+
+// 曲を選んで追加
+$('sQ').oninput = async () => {
+  const q = norm($('sQ').value);
+  if (!q) { $('sRes').innerHTML = ''; return; }
+  let list; try { list = await loadSongs(); } catch(e) { $('sRes').innerHTML = '<p class="hint">譜面データを読み込めなかった</p>'; return; }
+  if (norm($('sQ').value) !== q) return;
+  const hits = list.filter(x => norm(x.title).includes(q) || norm(x.reading).includes(q) || norm(x.artist).includes(q)).slice(0, 15);
+  $('sRes').innerHTML = hits.length ? hits.map(x => `<div style="display:flex;flex-direction:column;gap:4px;padding:6px 0;border-bottom:1px solid var(--line)"><div><b>${esc(x.title)}</b> <small style="color:var(--dim)">${esc(x.artist)}</small></div><div class="chips">` +
+    Object.keys(DKEY).filter(d => x['lev_'+DKEY[d]+'_i']).map(d => `<button class="btn small" data-pick="${esc(x.id)}" data-d="${d}"><span class="diff d-${d}">${d}</span>${esc(x['lev_'+DKEY[d]+'_i'])}</button>`).join('') + `</div></div>`).join('') : '<p class="hint">見つからない</p>';
+};
+$('sRes').onclick = e => {
+  const b = e.target.closest('[data-pick]'); if (!b) return;
+  const x = songs.find(s => s.id === b.dataset.pick), d = b.dataset.d;
+  resetForm();
+  $('fTitle').value = x.title; $('fDiff').value = d; $('fConst').value = x['lev_'+DKEY[d]+'_i'];
+  const label = d==='MAS' ? 'MASTER' : d==='ULT' ? 'ULTIMA' : d==='EXP' ? 'EXPERT' : d;
+  window.open('https://www.youtube.com/results?search_query=' + encodeURIComponent(`CHUNITHM ${x.title} ${label}`), '_blank', 'noopener');
+  $('fUrl').focus(); toast('曲名と定数を入れた。動画のURLを貼って「追加」');
+};
+
 $('btnBulk').onclick = () => {
   const lines = $('bulk').value.split('\n').map(s=>s.trim()).filter(Boolean);
   let ok=0, ng=0;
