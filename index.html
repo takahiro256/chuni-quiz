@@ -134,6 +134,7 @@ td a{color:var(--accent)}
           <textarea id="playersInput" rows="3">タカヒロ</textarea>
         </label>
         <div class="row">
+          <label>モード <select id="mode"><option value="normal">ふつう（最初から・音あり）</option><option value="hard">激ムズ（ランダム10秒・音なし）</option></select></label>
           <label>問題数 <input id="nQ" type="number" min="1" value="10"></label>
           <label>定数 下限 <input id="minC" type="number" step="0.1" value="1.0"></label>
           <label>定数 上限 <input id="maxC" type="number" step="0.1" value="15.9"></label>
@@ -536,7 +537,7 @@ $('btnImport').onclick = () => importData($('jsonBox').value);
 $('fileIn').onchange = e => { const f=e.target.files[0]; if (!f) return; f.text().then(importData); e.target.value=''; };
 
 // ---------- quiz ----------
-const diffSel = new Set(['MAS','ULT','EXP']);
+const diffSel = new Set(DIFFS);
 $('diffFilter').innerHTML = DIFFS.map(d=>`<label><input type="checkbox" value="${d}" ${diffSel.has(d)?'checked':''}> <span class="diff d-${d}">${d}</span></label>`).join('');
 $('diffFilter').onchange = e => { e.target.checked ? diffSel.add(e.target.value) : diffSel.delete(e.target.value); renderSetup(); };
 $('playersInput').value = db.players;
@@ -558,7 +559,7 @@ $('btnStart').onclick = () => {
   const p = pool().slice();
   for (let i=p.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [p[i],p[j]]=[p[j],p[i]]; }
   const n = Math.min(+$('nQ').value || 10, p.length);
-  game = {names, order:p.slice(0,n), idx:-1, total:Object.fromEntries(names.map(n=>[n,0])), exact:Object.fromEntries(names.map(n=>[n,0]))};
+  game = {names, hard:$('mode').value==='hard', order:p.slice(0,n), idx:-1, total:Object.fromEntries(names.map(n=>[n,0])), exact:Object.fromEntries(names.map(n=>[n,0]))};
   $('setupPanel').hidden = true; $('playPanel').hidden = false;
   nextQ();
 };
@@ -585,7 +586,7 @@ async function nextQ(){
 // 広告対策: 最初はミュート＋カーテン。本編の再生位置が開始秒付近から実際に進み始めたら音を出して画面を見せる
 let gate = null;
 async function loadQuiz(q){
-  gate = {armed:true, t0:null};
+  gate = {armed:true, t0:null, st:q.start||0, seg:null};
   clearInterval(endTimer); $('btnPlayNow').hidden = true;
   clearTimeout(loadQuiz.t); loadQuiz.t = setTimeout(() => { if (!$('curtain').hidden && player && player.getPlayerState && player.getPlayerState()!==1) { $('curtainSub').textContent='自動再生が止められたかも'; $('btnPlayNow').hidden=false; } }, 5000);
   if (!player) {
@@ -598,13 +599,23 @@ async function loadQuiz(q){
     if (!player || !player.getCurrentTime || !game) return;
     const c = cur();
     if (gate && gate.armed && player.getPlayerState && player.getPlayerState()===1) {
-      const t = player.getCurrentTime(), st = (c && c.start) || 0;
+      const t = player.getCurrentTime(), st = gate.st;
       if (t >= st - 1 && t < st + 30) {
         if (gate.t0 == null) gate.t0 = t;
-        else if (t - gate.t0 > 0.4) { gate.armed = false; player.unMute(); setCurtain(false); $('btnPlayNow').hidden = true; }
+        else if (t - gate.t0 > 0.4) {
+          if (game.hard && gate.seg == null) {
+            // 本編が始まったので長さが確定。前後の導入とリザルトを避けて10秒区間を選び、そこへ飛んでもう一度待つ
+            const d = player.getDuration(), lo = st + (d - st) * 0.1, hi = st + (d - st) * 0.85 - 10;
+            gate.seg = gate.st = hi > lo ? lo + Math.random() * (hi - lo) : st;
+            gate.t0 = null; player.seekTo(gate.seg, true);
+          } else {
+            gate.armed = false; if (!game.hard) player.unMute(); setCurtain(false); $('btnPlayNow').hidden = true;
+          }
+        }
       }
     }
-    if (c && c.end && player.getCurrentTime() >= c.end) { player.pauseVideo(); setCurtain(true, 'STOP', 'ここまで。定数を入れて「答え合わせ」'); }
+    const stopAt = game.hard ? (gate.seg != null && !gate.armed ? gate.seg + 10 : null) : c && c.end;
+    if (stopAt && player.getCurrentTime() >= stopAt) { player.pauseVideo(); setCurtain(true, 'STOP', 'ここまで。定数を入れて「答え合わせ」'); }
   }, 250);
 }
 function onQuizState(e){
@@ -614,7 +625,7 @@ function onQuizState(e){
   if (e.data === 0) setCurtain(true, 'END', '定数を入れて「答え合わせ」');
 }
 $('btnPlayNow').onclick = () => { if (player && player.playVideo) player.playVideo(); };
-$('btnReplay').onclick = () => { if (!player||!game) return; const q=cur(); setCurtain(true,null,'再生中…'); player.seekTo(q.start||0, true); player.playVideo(); };
+$('btnReplay').onclick = () => { if (!player||!game) return; const q=cur(); setCurtain(true,null,'再生中…'); player.seekTo(game.hard && gate.seg != null ? gate.seg : q.start||0, true); player.playVideo(); };
 $('btnPause').onclick = () => { if (!player) return; const s=player.getPlayerState(); if (s===1){ player.pauseVideo(); setCurtain(true,'PAUSE',''); } else { player.playVideo(); } };
 $('btnUnmask').onclick = () => { if (!game) return; game.unmasked = !game.unmasked; $('masks').hidden = game.unmasked; $('btnUnmask').textContent = game.unmasked?'マスクを戻す':'マスクを外す'; };
 try { const v = localStorage.getItem('chuniq.vol'); if (v !== null) $('vol').value = v; } catch(e) {}
